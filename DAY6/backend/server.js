@@ -1,26 +1,36 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import { connectDB } from './config/db.js'; 
-import user from './model/user.js'; // Assuming you have a user model defined
+import User from './model/user.js'; // Use capital 'U' for model
+
 const app = express();
 
 
-connectDB()
+connectDB();
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
-const userSchema = new mongoose.Schema({
-    name: {type :String, required: true},
-    age:Number
+// Get all users
+app.get('/get', async (req, res) => {
+    try {
+        const users = await User.find({});
+        res.json(users);
+    } catch (error) {
+        res.status(500).json(error);
+    }
 });
 
-// Prevent OverwriteModelError
-const User = mongoose.models.User || mongoose.model('User', userSchema);
+// Create a new user
+app.post('/post', async (req, res) => {
+    try {
+        const newUser = new User(req.body);
+        await newUser.save();
+        res.json(newUser);
+    } catch (error) {
+        res.status(401).json(error);
+    }
+});
 
-app.get('/get', (req, res) => {
-    res.send('Hello, World!');
-});
-app.post('/post', (req, res) => {
-    res.send('Post request received!');
-});
 app.put('/put', (req, res) => {
     res.send('Put request received!');
 });

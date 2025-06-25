@@ -4,5 +4,5 @@ const userSchema = new mongoose.Schema({
     name: { type: String, required: true }, 
     age: Number
 })
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model('users', userSchema);
 export default User;
