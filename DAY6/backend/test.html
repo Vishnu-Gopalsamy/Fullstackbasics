@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Connection Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        button { padding: 10px; margin: 10px 0; cursor: pointer; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Backend Connection Test</h1>
+    
+    <div>
+        <h2>1. Test GET Connection</h2>
+        <button onclick="testGet()">Test GET Request</button>
+        <pre id="getResult">Results will appear here...</pre>
+    </div>
+
+    <div>
+        <h2>2. Test POST Connection</h2>
+        <button onclick="testPost()">Test POST Request</button>
+        <pre id="postResult">Results will appear here...</pre>
+    </div>
+
+    <script>
+        async function testGet() {
+            const resultElement = document.getElementById('getResult');
+            resultElement.textContent = 'Testing connection...';
+            
+            try {
+                const response = await fetch('http://localhost:3000/test');
+                const data = await response.json();
+                resultElement.textContent = 'SUCCESS! Server responded with:\n' + JSON.stringify(data, null, 2);
+                resultElement.className = 'success';
+            } catch (error) {
+                resultElement.textContent = 'ERROR: ' + error.message;
+                resultElement.className = 'error';
+            }
+        }
+
+        async function testPost() {
+            const resultElement = document.getElementById('postResult');
+            resultElement.textContent = 'Testing POST request...';
+            
+            const testData = {
+                name: 'Test User',
+                email: 'test@example.com',
+                password: 'password123',
+                department: 'Testing'
+            };
+            
+            try {
+                const response = await fetch('http://localhost:3000/test-post', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testData)
+                });
+                const data = await response.json();
+                resultElement.textContent = 'SUCCESS! Server responded with:\n' + JSON.stringify(data, null, 2);
+                resultElement.className = 'success';
+            } catch (error) {
+                resultElement.textContent = 'ERROR: ' + error.message;
+                resultElement.className = 'error';
+            }
+        }
+    </script>
+</body>
+</html>

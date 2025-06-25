@@ -1,5 +1,14 @@
 {
+  "name": "fullstack-day6",
+  "version": "1.0.0",
+  "description": "Full stack application",
   "dependencies": {
     "mongoose": "^8.16.0"
+  },
+  "scripts": {
+    "start": "cd backend && node server.js",
+    "server": "cd backend && node server.js",
+    "install-backend": "cd backend && npm install",
+    "dev": "cd learn && npm start"
   }
 }

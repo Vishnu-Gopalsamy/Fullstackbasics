@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Testing Tool</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .container { margin-bottom: 20px; border: 1px solid #ddd; padding: 15px; border-radius: 5px; }
+        button { padding: 8px 15px; background: #4CAF50; color: white; border: none; cursor: pointer; margin: 5px; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        .success { border-left: 5px solid green; }
+        .error { border-left: 5px solid red; }
+        input, select { padding: 8px; margin: 5px 0; width: 100%; box-sizing: border-box; }
+        .field { margin-bottom: 10px; }
+        h2 { border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .response { margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <h1>Backend API Testing Tool</h1>
+    <p>Use this tool to test your API endpoints with both GET and POST requests.</p>
+    
+    <div class="container">
+        <h2>1. Simple GET Request</h2>
+        <p>Test if your API is reachable with a basic GET request.</p>
+        <button onclick="testSimpleGet()">Test GET to Root URL</button>
+        <div class="response">
+            <h3>Response:</h3>
+            <pre id="simpleGetResult">Click the button to test...</pre>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>2. GET All Users</h2>
+        <p>Retrieve all users from the database.</p>
+        <button onclick="getAllUsers()">Get All Users</button>
+        <div class="response">
+            <h3>Response:</h3>
+            <pre id="getAllResult">Click the button to test...</pre>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>3. Create New User (POST)</h2>
+        <p>Test creating a new user with form data:</p>
+        <div class="field">
+            <label for="name">Name:</label>
+            <input type="text" id="name" placeholder="Enter name" value="Test User">
+        </div>
+        <div class="field">
+            <label for="email">Email:</label>
+            <input type="email" id="email" placeholder="Enter email" value="test@example.com">
+        </div>
+        <div class="field">
+            <label for="password">Password:</label>
+            <input type="password" id="password" placeholder="Enter password" value="password123">
+        </div>
+        <div class="field">
+            <label for="department">Department:</label>
+            <select id="department">
+                <option value="HR">HR</option>
+                <option value="Engineering" selected>Engineering</option>
+                <option value="Marketing">Marketing</option>
+            </select>
+        </div>
+        <button onclick="createUser()">Create User (POST)</button>
+        <div class="response">
+            <h3>Response:</h3>
+            <pre id="createUserResult">Fill the form and click the button to test...</pre>
+        </div>
+    </div>
+
+    <script>
+        // Test base URL
+        const BASE_URL = 'http://localhost:3000';
+
+        async function testSimpleGet() {
+            const resultElement = document.getElementById('simpleGetResult');
+            resultElement.textContent = 'Sending request...';
+            
+            try {
+                const response = await fetch(`${BASE_URL}/`);
+                const text = await response.text();
+                resultElement.textContent = `Status: ${response.status}\nContent-Type: ${response.headers.get('content-type')}\n\nResponse:\n${text.substring(0, 300)}${text.length > 300 ? '...' : ''}`;
+                resultElement.className = 'success';
+            } catch (error) {
+                resultElement.textContent = `ERROR: ${error.message}\n\nPossible causes:\n1. Server is not running\n2. CORS is blocking the request\n3. Network issue`;
+                resultElement.className = 'error';
+            }
+        }
+
+        async function getAllUsers() {
+            const resultElement = document.getElementById('getAllResult');
+            resultElement.textContent = 'Fetching users...';
+            
+            try {
+                const response = await fetch(`${BASE_URL}/get`);
+                const data = await response.json();
+                resultElement.textContent = `Status: ${response.status}\n\nData:\n${JSON.stringify(data, null, 2)}`;
+                resultElement.className = 'success';
+            } catch (error) {
+                resultElement.textContent = `ERROR: ${error.message}`;
+                resultElement.className = 'error';
+            }
+        }
+
+        async function createUser() {
+            const resultElement = document.getElementById('createUserResult');
+            resultElement.textContent = 'Submitting user data...';
+            
+            const userData = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                department: document.getElementById('department').value
+            };
+            
+            console.log('Submitting user data:', userData);
+            
+            try {
+                const response = await fetch(`${BASE_URL}/post`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData)
+                });
+                
+                const contentType = response.headers.get('content-type');
+                let result;
+                
+                if (contentType && contentType.includes('application/json')) {
+                    result = await response.json();
+                    resultElement.textContent = `Status: ${response.status}\n\nResponse:\n${JSON.stringify(result, null, 2)}`;
+                } else {
+                    result = await response.text();
+                    resultElement.textContent = `Status: ${response.status}\n\nResponse:\n${result}`;
+                }
+                
+                resultElement.className = response.ok ? 'success' : 'error';
+            } catch (error) {
+                resultElement.textContent = `ERROR: ${error.message}\n\nThis could mean:\n1. Server is not running\n2. CORS is not configured correctly\n3. Network issue`;
+                resultElement.className = 'error';
+                console.error('Error details:', error);
+            }
+        }
+    </script>
+</body>
+</html>
