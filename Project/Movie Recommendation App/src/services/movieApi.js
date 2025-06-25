@@ -66,10 +66,63 @@ export const movieApi = {
 
   async getMovieDetails(movieId) {
     try {
-      const response = await api.get(`/movie/${movieId}`);
+      const response = await api.get(`/movie/${movieId}`, {
+        params: {
+          append_to_response: 'credits,videos,reviews,similar'
+        }
+      });
       return response.data;
     } catch (error) {
       console.error(`Error fetching details for movie ${movieId}:`, error);
+      throw error;
+    }
+  },
+
+  async getMovieRecommendations(movieId, page = 1) {
+    try {
+      const response = await api.get(`/movie/${movieId}/recommendations`, {
+        params: { page }
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching recommendations for movie ${movieId}:`, error);
+      throw error;
+    }
+  },
+
+  async getGenres() {
+    try {
+      const response = await api.get('/genre/movie/list');
+      return response.data.genres;
+    } catch (error) {
+      console.error('Error fetching genres:', error);
+      throw error;
+    }
+  },
+
+  async getTrending(timeWindow = 'day', page = 1) {
+    try {
+      const response = await api.get(`/trending/movie/${timeWindow}`, {
+        params: { page }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching trending movies:', error);
+      throw error;
+    }
+  },
+
+  async discoverMovies(options = {}, page = 1) {
+    try {
+      const params = {
+        page,
+        ...options
+      };
+      
+      const response = await api.get('/discover/movie', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error discovering movies:', error);
       throw error;
     }
   }

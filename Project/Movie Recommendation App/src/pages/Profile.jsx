@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Container, Typography, Box, Paper, Avatar, Grid, TextField,
-  Button, Divider, Card, CardContent, Switch, FormControlLabel,
-  Chip, List, ListItem, ListItemText, ListItemIcon, Alert,
-  IconButton
+  Container, Box, Typography, Paper, Avatar, Button, Grid,
+  TextField, Divider, Chip, IconButton, Switch, FormControlLabel, 
+  Card, CardContent, Tabs, Tab, FormGroup, Alert
 } from '@mui/material';
+import { Edit, Save, Add, Delete, MovieFilter, Favorite, Bookmark, Star } from '@mui/icons-material';
 import './Profile.css';
 
 const Profile = () => {
@@ -29,13 +29,19 @@ const Profile = () => {
   });
 
   const handleEditToggle = () => {
+    if (editMode) {
+      // Save profile would happen here in a real app
+      console.log('Saving profile:', profileData);
+    }
     setEditMode(!editMode);
   };
 
   const handleSaveProfile = () => {
-    // In a real app, this would save to a database or API
-    setEditMode(false);
-    // Show a success message
+    // Simulate API save
+    setTimeout(() => {
+      setEditMode(false);
+      console.log('Profile saved:', profileData);
+    }, 500);
   };
 
   const handleInputChange = (e) => {
@@ -47,12 +53,14 @@ const Profile = () => {
   };
 
   const handlePreferenceChange = (e) => {
-    const { name, checked } = e.target;
+    const { name, checked, value } = e.target;
+    const type = e.target.type;
+    
     setProfileData({
       ...profileData,
       preferences: {
         ...profileData.preferences,
-        [name]: checked
+        [name]: type === 'checkbox' ? checked : value
       }
     });
   };
@@ -67,270 +75,316 @@ const Profile = () => {
     });
   };
 
+  const handleAddGenre = () => {
+    const newGenre = prompt('Enter a genre to add to your preferences:');
+    if (newGenre && !profileData.preferences.genres.includes(newGenre)) {
+      setProfileData({
+        ...profileData,
+        preferences: {
+          ...profileData.preferences,
+          genres: [...profileData.preferences.genres, newGenre]
+        }
+      });
+    }
+  };
+
+  const [activeTab, setActiveTab] = useState(0);
+  
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
+
   return (
-    <Container maxWidth="lg" className="profile-container" sx={{ py: 4 }}>
-      <Alert severity="info" sx={{ mb: 3 }}>
-        This is a demo profile page. In a real app, this would connect to a user authentication system.
-      </Alert>
-      
-      <Grid container spacing={4}>
-        {/* Left Side - Profile Info */}
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3, mb: 3 }}>
-            <Box sx={{ textAlign: 'center', mb: 2 }}>
-              <Avatar
-                src={profileData.avatar || '/default-avatar.png'}
-                alt={profileData.name}
-                sx={{ width: 100, height: 100, mx: 'auto', mb: 2 }}
-              />
-              
-              {!editMode ? (
-                <>
-                  <Typography variant="h5" gutterBottom>
-                    {profileData.name}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    {profileData.email}
-                  </Typography>
-                  <Typography variant="body1" sx={{ mt: 2 }}>
-                    {profileData.bio}
-                  </Typography>
-                </>
+    <Container maxWidth="md" sx={{ py: 4 }}>
+      <Paper elevation={3} sx={{ p: 4, borderRadius: 2, mb: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Avatar 
+              src={profileData.avatar || "/default-avatar.png"} 
+              sx={{ width: 120, height: 120, mr: 3 }}
+              alt={profileData.name}
+            />
+            <Box>
+              {editMode ? (
+                <TextField
+                  name="name"
+                  value={profileData.name}
+                  onChange={handleInputChange}
+                  variant="outlined"
+                  fullWidth
+                  label="Name"
+                  margin="dense"
+                />
               ) : (
-                <Box sx={{ mt: 2 }}>
-                  <Button variant="outlined" size="small" sx={{ mb: 2 }}>
-                    Change Avatar
-                  </Button>
-                  <TextField
-                    name="name"
-                    label="Name"
-                    value={profileData.name}
-                    onChange={handleInputChange}
-                    fullWidth
-                    margin="dense"
-                    variant="outlined"
-                  />
-                  <TextField
-                    name="email"
-                    label="Email"
-                    value={profileData.email}
-                    onChange={handleInputChange}
-                    fullWidth
-                    margin="dense"
-                    variant="outlined"
-                  />
-                  <TextField
-                    name="bio"
-                    label="Bio"
-                    value={profileData.bio}
-                    onChange={handleInputChange}
-                    fullWidth
-                    margin="dense"
-                    variant="outlined"
-                    multiline
-                    rows={3}
-                  />
-                </Box>
+                <Typography variant="h4" gutterBottom>
+                  {profileData.name}
+                </Typography>
               )}
-
-              <Box sx={{ mt: 3 }}>
-                {!editMode ? (
-                  <Button 
-                    variant="contained" 
-                    onClick={handleEditToggle}
-                    sx={{ borderRadius: '20px' }}
-                  >
-                    Edit Profile
-                  </Button>
-                ) : (
-                  <Box>
-                    <Button 
-                      variant="contained" 
-                      color="primary" 
-                      onClick={handleSaveProfile}
-                      sx={{ mr: 1 }}
-                    >
-                      Save
-                    </Button>
-                    <Button 
-                      variant="outlined" 
-                      onClick={handleEditToggle}
-                    >
-                      Cancel
-                    </Button>
-                  </Box>
-                )}
-              </Box>
+              
+              <Typography variant="body1" color="text.secondary">
+                {profileData.email}
+              </Typography>
             </Box>
-
-            <Divider sx={{ my: 3 }} />
-
+          </Box>
+          
+          <Button 
+            variant="contained" 
+            color={editMode ? "success" : "primary"}
+            startIcon={editMode ? <Save /> : <Edit />}
+            onClick={handleEditToggle}
+          >
+            {editMode ? "Save Changes" : "Edit Profile"}
+          </Button>
+        </Box>
+        
+        <Divider sx={{ my: 3 }} />
+        
+        <Grid container spacing={4}>
+          <Grid item xs={12} sm={6}>
             <Typography variant="h6" gutterBottom>
-              Account Stats
+              About
             </Typography>
-            <Grid container spacing={1}>
-              <Grid item xs={6}>
-                <Card sx={{ textAlign: 'center', bgcolor: 'primary.light', color: 'white' }}>
-                  <CardContent>
-                    <Typography variant="h4">
-                      {profileData.stats.watched}
-                    </Typography>
-                    <Typography variant="body2">
-                      Watched
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={6}>
-                <Card sx={{ textAlign: 'center', bgcolor: 'secondary.light', color: 'white' }}>
-                  <CardContent>
-                    <Typography variant="h4">
-                      {profileData.stats.watchlist}
-                    </Typography>
-                    <Typography variant="body2">
-                      Watchlist
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={6}>
-                <Card sx={{ textAlign: 'center', mt: 1 }}>
-                  <CardContent>
-                    <Typography variant="h4">
-                      {profileData.stats.reviews}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Reviews
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={6}>
-                <Card sx={{ textAlign: 'center', mt: 1 }}>
-                  <CardContent>
-                    <Typography variant="h4">
-                      {profileData.stats.favorites}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Favorites
-                    </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            </Grid>
-          </Paper>
-        </Grid>
-
-        {/* Right Side - Preferences & Activity */}
-        <Grid item xs={12} md={8}>
-          <Paper sx={{ p: 3, mb: 3 }}>
+            
+            {editMode ? (
+              <TextField
+                name="bio"
+                value={profileData.bio}
+                onChange={handleInputChange}
+                variant="outlined"
+                fullWidth
+                label="Bio"
+                multiline
+                rows={4}
+                margin="dense"
+              />
+            ) : (
+              <Typography variant="body1">
+                {profileData.bio || "No bio provided."}
+              </Typography>
+            )}
+          </Grid>
+          
+          <Grid item xs={12} sm={6}>
             <Typography variant="h6" gutterBottom>
-              Preferences
+              Genre Preferences
             </Typography>
-            <Divider sx={{ mb: 2 }} />
-
-            <Typography variant="subtitle1" gutterBottom fontWeight="500">
-              Favorite Genres
-            </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
+            
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
               {profileData.preferences.genres.map((genre) => (
                 <Chip 
-                  key={genre} 
-                  label={genre} 
-                  color="primary" 
-                  variant="outlined"
+                  key={genre}
+                  label={genre}
                   onDelete={editMode ? () => handleRemoveGenre(genre) : undefined}
                 />
               ))}
               
               {editMode && (
-                <Chip 
-                  label="+ Add Genre" 
-                  variant="outlined" 
-                  color="primary"
-                  sx={{ borderStyle: 'dashed' }}
+                <Chip
+                  icon={<Add />}
+                  label="Add Genre"
+                  variant="outlined"
+                  onClick={handleAddGenre}
                 />
               )}
             </Box>
-
-            <Typography variant="subtitle1" gutterBottom fontWeight="500">
-              App Settings
-            </Typography>
-            {editMode ? (
-              <Box sx={{ pl: 1 }}>
+            
+            {editMode && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                Click on a genre chip to remove it, or click "Add Genre" to add new ones.
+              </Alert>
+            )}
+          </Grid>
+          
+          {editMode && (
+            <Grid item xs={12}>
+              <Typography variant="h6" gutterBottom>
+                App Settings
+              </Typography>
+              
+              <FormGroup>
                 <FormControlLabel 
                   control={
                     <Switch 
                       checked={profileData.preferences.notifications}
                       onChange={handlePreferenceChange}
                       name="notifications"
-                      color="primary"
                     />
                   } 
-                  label="Email Notifications"
+                  label="Enable Notifications" 
                 />
+                
                 <FormControlLabel 
                   control={
                     <Switch 
                       checked={profileData.preferences.darkMode}
                       onChange={handlePreferenceChange}
                       name="darkMode"
-                      color="primary"
                     />
                   } 
-                  label="Dark Mode"
+                  label="Dark Mode" 
                 />
+              </FormGroup>
+              
+              <Box sx={{ mt: 2 }}>
+                <TextField
+                  select
+                  label="Language"
+                  name="language"
+                  value={profileData.preferences.language}
+                  onChange={handlePreferenceChange}
+                  SelectProps={{ native: true }}
+                  variant="outlined"
+                  size="small"
+                >
+                  <option value="English">English</option>
+                  <option value="Spanish">Spanish</option>
+                  <option value="French">French</option>
+                  <option value="German">German</option>
+                  <option value="Japanese">Japanese</option>
+                </TextField>
               </Box>
-            ) : (
-              <List dense>
-                <ListItem>
-                  <ListItemIcon>
-                    <span className="material-icons">notifications</span>
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary="Email Notifications"
-                    secondary={profileData.preferences.notifications ? "Enabled" : "Disabled"}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <span className="material-icons">dark_mode</span>
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary="Dark Mode"
-                    secondary={profileData.preferences.darkMode ? "Enabled" : "Disabled"}
-                  />
-                </ListItem>
-                <ListItem>
-                  <ListItemIcon>
-                    <span className="material-icons">language</span>
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary="Language"
-                    secondary={profileData.preferences.language}
-                  />
-                </ListItem>
-              </List>
-            )}
-          </Paper>
-
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Security
-            </Typography>
-            <Divider sx={{ mb: 2 }} />
-
-            <Box sx={{ mt: 2 }}>
-              <Button variant="outlined" color="primary" sx={{ mr: 2 }}>
-                Change Password
-              </Button>
-              <Button variant="outlined" color="error">
-                Delete Account
+            </Grid>
+          )}
+        </Grid>
+        
+        {editMode && (
+          <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
+            <Button 
+              variant="outlined" 
+              onClick={() => setEditMode(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="contained" 
+              color="success"
+              onClick={handleSaveProfile}
+            >
+              Save Changes
+            </Button>
+          </Box>
+        )}
+      </Paper>
+      
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h5" gutterBottom>
+          Activity Stats
+        </Typography>
+        
+        <Grid container spacing={2}>
+          <Grid item xs={6} sm={3}>
+            <Card>
+              <CardContent sx={{ textAlign: 'center' }}>
+                <MovieFilter fontSize="large" color="primary" />
+                <Typography variant="h4" sx={{ mt: 1 }}>
+                  {profileData.stats.watched}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Watched Movies
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          
+          <Grid item xs={6} sm={3}>
+            <Card>
+              <CardContent sx={{ textAlign: 'center' }}>
+                <Bookmark fontSize="large" color="primary" />
+                <Typography variant="h4" sx={{ mt: 1 }}>
+                  {profileData.stats.watchlist}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Watchlist
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          
+          <Grid item xs={6} sm={3}>
+            <Card>
+              <CardContent sx={{ textAlign: 'center' }}>
+                <Star fontSize="large" color="primary" />
+                <Typography variant="h4" sx={{ mt: 1 }}>
+                  {profileData.stats.reviews}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Reviews
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+          
+          <Grid item xs={6} sm={3}>
+            <Card>
+              <CardContent sx={{ textAlign: 'center' }}>
+                <Favorite fontSize="large" color="primary" />
+                <Typography variant="h4" sx={{ mt: 1 }}>
+                  {profileData.stats.favorites}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Favorites
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      </Box>
+      
+      <Box sx={{ mb: 4 }}>
+        <Tabs value={activeTab} onChange={handleTabChange} variant="fullWidth">
+          <Tab label="Recent Activity" />
+          <Tab label="Favorites" />
+          <Tab label="Watchlist" />
+        </Tabs>
+        
+        <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderTop: 0 }}>
+          {activeTab === 0 && (
+            <Box>
+              <Typography variant="subtitle1" gutterBottom>
+                Your Recent Activity
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                You haven't logged any activity yet.
+              </Typography>
+              <Button variant="contained" sx={{ mt: 2 }}>
+                Explore Movies
               </Button>
             </Box>
-          </Paper>
-        </Grid>
-      </Grid>
+          )}
+          {activeTab === 1 && (
+            <Box>
+              <Typography variant="subtitle1" gutterBottom>
+                Your Favorites
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                You don't have any favorite movies yet.
+              </Typography>
+              <Button variant="contained" sx={{ mt: 2 }}>
+                Find Movies to Love
+              </Button>
+            </Box>
+          )}
+          {activeTab === 2 && (
+            <Box>
+              <Typography variant="subtitle1" gutterBottom>
+                Your Watchlist
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Your watchlist is empty.
+              </Typography>
+              <Button variant="contained" sx={{ mt: 2 }}>
+                Add Movies to Watch
+              </Button>
+            </Box>
+          )}
+        </Box>
+      </Box>
+      
+      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <Button variant="outlined" color="error">
+          Delete Account
+        </Button>
+      </Box>
     </Container>
   );
 };

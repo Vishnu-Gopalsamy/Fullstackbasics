@@ -52,11 +52,12 @@ a {
 
 ::-webkit-scrollbar-track {
   background: #f1f1f1;
+  border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb {
   background: #888;
-  border-radius: 4px;
+  border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -68,10 +69,11 @@ a {
   vertical-align: middle;
 }
 
+/* Root container styles */
 #root {
-  max-width: 1280px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 0;
   text-align: center;
 }
 
@@ -81,9 +83,11 @@ a {
   will-change: filter;
   transition: filter 300ms;
 }
+
 .logo:hover {
   filter: drop-shadow(0 0 2em #646cffaa);
 }
+
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
@@ -103,14 +107,26 @@ a {
   }
 }
 
+/* Card styling */
 .card {
   padding: 2em;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
 }
 
 .read-the-docs {
   color: #888;
+  margin: 2rem 0;
 }
 
+/* App layout */
 .App {
   min-height: 100vh;
   display: flex;
@@ -121,20 +137,90 @@ a {
   flex: 1;
 }
 
+/* Hero section styling */
 .hero-section {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 4rem 0;
+  padding: 6rem 2rem;
   text-align: center;
+  border-radius: 0 0 20px 20px;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
-/* Card hover effects */
+.hero-section h1 {
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+  font-weight: 700;
+}
+
+.hero-section p {
+  font-size: 1.2rem;
+  max-width: 700px;
+  margin: 0 auto 2rem;
+  opacity: 0.9;
+}
+
+/* Enhanced Card hover effects */
 .MuiCard-root {
   box-shadow: 0px 3px 15px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .MuiCard-root:hover {
   transform: translateY(-5px);
-  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Navigation drawer styling */
+.MuiDrawer-paper {
+  background-color: #fff;
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Search bar styling */
+.search-field {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
+}
+
+.search-field:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Footer styling */
+footer {
+  background-color: #f8f9fa;
+  padding: 2rem 0;
+  margin-top: 4rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Responsive adjustments */
+@media (max-width: 960px) {
+  .hero-section {
+    padding: 4rem 1rem;
+  }
+  
+  .hero-section h1 {
+    font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .hero-section {
+    padding: 3rem 1rem;
+    border-radius: 0 0 15px 15px;
+  }
+  
+  .hero-section h1 {
+    font-size: 2rem;
+  }
+  
+  .hero-section p {
+    font-size: 1rem;
+  }
 }

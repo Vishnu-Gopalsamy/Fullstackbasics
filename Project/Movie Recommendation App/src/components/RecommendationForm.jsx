@@ -1,22 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
-  Box, 
-  Typography, 
-  TextField, 
-  Button, 
-  FormControl, 
-  InputLabel, 
-  Select, 
-  MenuItem, 
-  Chip, 
-  OutlinedInput, 
-  Checkbox, 
-  ListItemText,
-  Slider,
-  Paper,
-  Divider,
-  Alert,
-  CircularProgress
+  Box, Paper, Typography, FormControl, InputLabel, Select, MenuItem,
+  FormGroup, FormControlLabel, Switch, TextField, Button, Slider, Chip,
+  Alert, Grid, CircularProgress
 } from '@mui/material';
 import { movieApi } from '../services/movieApi';
 
@@ -60,61 +46,53 @@ const RecommendationForm = ({ onSubmit, loading }) => {
 
   const handleChange = (event) => {
     const { name, value } = event.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-    
-    // Clear error when field is updated
+    setFormData({ ...formData, [name]: value });
+    // Clear error when field is edited
     if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: null
-      });
+      setErrors({ ...errors, [name]: null });
     }
   };
 
   const handleGenreChange = (event) => {
     const { value } = event.target;
-    setFormData({
-      ...formData,
-      favoriteGenres: value
-    });
+    setFormData({ ...formData, favoriteGenres: value });
+    // Clear error when field is edited
+    if (errors.favoriteGenres) {
+      setErrors({ ...errors, favoriteGenres: null });
+    }
   };
 
   const handleYearRangeChange = (event, newValue) => {
-    setFormData({
-      ...formData,
-      releaseYearRange: newValue
-    });
+    setFormData({ ...formData, releaseYearRange: newValue });
   };
 
   const handleRatingChange = (event, newValue) => {
-    setFormData({
-      ...formData,
-      minRating: newValue
-    });
+    setFormData({ ...formData, minRating: newValue });
   };
 
   const handleAdultChange = (event) => {
-    setFormData({
-      ...formData,
-      includeAdult: event.target.checked
-    });
+    setFormData({ ...formData, includeAdult: event.target.checked });
   };
 
   const handleMovieSearch = async () => {
-    if (!formData.favoriteMovies.trim()) return;
+    if (!formData.favoriteMovies.trim()) {
+      return;
+    }
     
     setSearchLoading(true);
     setSearchError(null);
     
     try {
-      const data = await movieApi.searchMovies(formData.favoriteMovies);
-      setSearchResults(data.results || []);
-    } catch (error) {
-      setSearchError('Failed to search movies. Please try again.');
-      console.error('Movie search error:', error);
+      const response = await movieApi.searchMovies(formData.favoriteMovies);
+      setSearchResults(response.results || []);
+      
+      if (response.results?.length === 0) {
+        setSearchError('No movies found matching your search.');
+      }
+    } catch (err) {
+      console.error('Error searching movies:', err);
+      setSearchError(err.message || 'Failed to search movies. Please try again.');
+      setSearchResults([]);
     } finally {
       setSearchLoading(false);
     }
@@ -123,6 +101,7 @@ const RecommendationForm = ({ onSubmit, loading }) => {
   const validateForm = () => {
     const newErrors = {};
     
+    // Validate at least one genre is selected
     if (formData.favoriteGenres.length === 0) {
       newErrors.favoriteGenres = 'Please select at least one genre';
     }
@@ -140,190 +119,187 @@ const RecommendationForm = ({ onSubmit, loading }) => {
   };
 
   return (
-    <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
-      <Typography variant="h5" component="h2" gutterBottom>
-        Get Personalized Movie Recommendations
+    <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+      <Typography variant="h6" gutterBottom>
+        Customize Your Recommendations
       </Typography>
       
-      <Typography variant="body1" color="text.secondary" paragraph>
-        Tell us about your preferences and we'll suggest movies you might enjoy.
-      </Typography>
-      
-      <Divider sx={{ my: 3 }} />
-      
-      <Box component="form" onSubmit={handleSubmit} noValidate>
-        <Typography variant="h6" gutterBottom>
-          Genre Preferences
-        </Typography>
-        
-        <FormControl 
-          fullWidth 
-          margin="normal" 
-          error={!!errors.favoriteGenres}
-          required
-        >
-          <InputLabel id="genres-label">Favorite Genres</InputLabel>
-          <Select
-            labelId="genres-label"
-            id="favoriteGenres"
-            name="favoriteGenres"
-            multiple
-            value={formData.favoriteGenres}
-            onChange={handleGenreChange}
-            input={<OutlinedInput label="Favorite Genres" />}
-            renderValue={(selected) => (
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                {selected.map((genreId) => (
-                  <Chip key={genreId} label={GENRES[genreId] || genreId} />
+      <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <FormControl fullWidth error={!!errors.favoriteGenres}>
+              <InputLabel id="favorite-genres-label">Favorite Genres</InputLabel>
+              <Select
+                labelId="favorite-genres-label"
+                id="favorite-genres"
+                multiple
+                value={formData.favoriteGenres}
+                onChange={handleGenreChange}
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selected.map((value) => (
+                      <Chip key={value} label={GENRES[value]} />
+                    ))}
+                  </Box>
+                )}
+                label="Favorite Genres"
+                disabled={loading}
+              >
+                {Object.entries(GENRES).map(([id, name]) => (
+                  <MenuItem key={id} value={parseInt(id)}>
+                    {name}
+                  </MenuItem>
                 ))}
-              </Box>
-            )}
-          >
-            {Object.entries(GENRES).map(([id, name]) => (
-              <MenuItem key={id} value={Number(id)}>
-                <Checkbox checked={formData.favoriteGenres.indexOf(Number(id)) > -1} />
-                <ListItemText primary={name} />
-              </MenuItem>
-            ))}
-          </Select>
-          {errors.favoriteGenres && (
-            <Typography variant="caption" color="error">
-              {errors.favoriteGenres}
-            </Typography>
-          )}
-        </FormControl>
-        
-        <Divider sx={{ my: 3 }} />
-        
-        <Typography variant="h6" gutterBottom>
-          Movie Preferences
-        </Typography>
-        
-        <Box sx={{ mb: 3 }}>
-          <TextField
-            fullWidth
-            label="Favorite Movies (separate with commas)"
-            name="favoriteMovies"
-            value={formData.favoriteMovies}
-            onChange={handleChange}
-            margin="normal"
-            helperText="Enter movies you've enjoyed in the past"
-          />
+              </Select>
+              {errors.favoriteGenres && (
+                <Typography color="error" variant="caption" sx={{ mt: 1 }}>
+                  {errors.favoriteGenres}
+                </Typography>
+              )}
+            </FormControl>
+          </Grid>
           
-          <Button 
-            variant="outlined" 
-            onClick={handleMovieSearch}
-            disabled={searchLoading || !formData.favoriteMovies.trim()}
-            sx={{ mt: 1 }}
-          >
-            {searchLoading ? <CircularProgress size={24} /> : 'Search Movies'}
-          </Button>
+          <Grid item xs={12}>
+            <Typography gutterBottom>
+              Release Year Range
+            </Typography>
+            <Slider
+              value={formData.releaseYearRange}
+              onChange={handleYearRangeChange}
+              valueLabelDisplay="auto"
+              min={1900}
+              max={new Date().getFullYear()}
+              disabled={loading}
+            />
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Typography variant="body2" color="text.secondary">
+                {formData.releaseYearRange[0]}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {formData.releaseYearRange[1]}
+              </Typography>
+            </Box>
+          </Grid>
+          
+          <Grid item xs={12}>
+            <Typography gutterBottom>
+              Minimum Rating: {formData.minRating} / 10
+            </Typography>
+            <Slider
+              value={formData.minRating}
+              onChange={handleRatingChange}
+              valueLabelDisplay="auto"
+              step={0.5}
+              min={0}
+              max={10}
+              disabled={loading}
+            />
+          </Grid>
+          
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Favorite Movies (Optional)"
+              name="favoriteMovies"
+              value={formData.favoriteMovies}
+              onChange={handleChange}
+              placeholder="Enter a movie title"
+              variant="outlined"
+              disabled={loading}
+              InputProps={{
+                endAdornment: (
+                  <Button 
+                    onClick={handleMovieSearch}
+                    disabled={!formData.favoriteMovies.trim() || searchLoading || loading}
+                    sx={{ ml: 1 }}
+                  >
+                    {searchLoading ? 'Searching...' : 'Search'}
+                  </Button>
+                ),
+              }}
+            />
+          </Grid>
+          
+          {searchLoading && (
+            <Grid item xs={12}>
+              <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                <CircularProgress size={24} />
+              </Box>
+            </Grid>
+          )}
           
           {searchError && (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              {searchError}
-            </Alert>
+            <Grid item xs={12}>
+              <Alert severity="error" onClose={() => setSearchError(null)}>
+                {searchError}
+              </Alert>
+            </Grid>
           )}
           
           {searchResults.length > 0 && (
-            <Box sx={{ mt: 2 }}>
+            <Grid item xs={12}>
               <Typography variant="subtitle2" gutterBottom>
                 Search Results:
               </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {searchResults.slice(0, 5).map(movie => (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, maxHeight: 120, overflow: 'auto' }}>
+                {searchResults.slice(0, 10).map((movie) => (
                   <Chip 
-                    key={movie.id} 
-                    label={movie.title} 
+                    key={movie.id}
+                    label={`${movie.title} (${movie.release_date?.substring(0, 4) || 'Unknown'})`}
                     onClick={() => {
-                      // Add to favorite movies
-                      const currentMovies = formData.favoriteMovies.split(',').map(m => m.trim()).filter(Boolean);
-                      if (!currentMovies.includes(movie.title)) {
-                        const newMovies = [...currentMovies, movie.title].join(', ');
-                        setFormData({
-                          ...formData,
-                          favoriteMovies: newMovies
-                        });
-                      }
+                      console.log('Selected movie:', movie);
+                      // In a real app, you would add this movie to a selection list
                     }}
                   />
                 ))}
               </Box>
-            </Box>
+            </Grid>
           )}
-        </Box>
-        
-        <TextField
-          fullWidth
-          label="Favorite Actors/Directors (separate with commas)"
-          name="favoriteActors"
-          value={formData.favoriteActors}
-          onChange={handleChange}
-          margin="normal"
-          helperText="Enter actors or directors whose work you enjoy"
-        />
-        
-        <Divider sx={{ my: 3 }} />
-        
-        <Typography variant="h6" gutterBottom>
-          Additional Filters
-        </Typography>
-        
-        <Box sx={{ mb: 4 }}>
-          <Typography id="year-range-slider" gutterBottom>
-            Release Year Range: {formData.releaseYearRange[0]} - {formData.releaseYearRange[1]}
-          </Typography>
-          <Slider
-            value={formData.releaseYearRange}
-            onChange={handleYearRangeChange}
-            valueLabelDisplay="auto"
-            min={1900}
-            max={new Date().getFullYear()}
-            aria-labelledby="year-range-slider"
-          />
-        </Box>
-        
-        <Box sx={{ mb: 4 }}>
-          <Typography id="rating-slider" gutterBottom>
-            Minimum Rating: {formData.minRating}/10
-          </Typography>
-          <Slider
-            value={formData.minRating}
-            onChange={handleRatingChange}
-            valueLabelDisplay="auto"
-            step={0.5}
-            marks
-            min={0}
-            max={10}
-            aria-labelledby="rating-slider"
-          />
-        </Box>
-        
-        <FormControl component="fieldset" margin="normal">
-          <Typography component="legend">Content Preferences</Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Checkbox
-              checked={formData.includeAdult}
-              onChange={handleAdultChange}
-              name="includeAdult"
-              color="primary"
+          
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Favorite Actors/Actresses (Optional)"
+              name="favoriteActors"
+              value={formData.favoriteActors}
+              onChange={handleChange}
+              placeholder="e.g. Tom Hanks, Emma Stone"
+              variant="outlined"
+              disabled={loading}
             />
-            <Typography>Include adult content</Typography>
-          </Box>
-        </FormControl>
-        
-        <Box sx={{ mt: 4 }}>
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            size="large"
-            fullWidth
-            disabled={loading}
-          >
-            {loading ? <CircularProgress size={24} /> : 'Get Recommendations'}
-          </Button>
-        </Box>
+          </Grid>
+          
+          <Grid item xs={12}>
+            <FormGroup>
+              <FormControlLabel 
+                control={
+                  <Switch 
+                    checked={formData.includeAdult}
+                    onChange={handleAdultChange}
+                    name="includeAdult"
+                    color="primary"
+                    disabled={loading}
+                  />
+                } 
+                label="Include adult content" 
+              />
+            </FormGroup>
+          </Grid>
+          
+          <Grid item xs={12}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <Button 
+                type="submit" 
+                variant="contained" 
+                color="primary" 
+                size="large"
+                disabled={loading}
+              >
+                {loading ? 'Generating...' : 'Get Recommendations'}
+              </Button>
+            </Box>
+          </Grid>
+        </Grid>
       </Box>
     </Paper>
   );

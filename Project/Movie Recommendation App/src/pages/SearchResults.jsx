@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { 
-  Container, Typography, Box, TextField, Button, Grid, 
-  Card, CardMedia, CardContent, CardActions, Rating, 
-  Chip, InputAdornment, IconButton, FormControl,
-  Select, MenuItem, Pagination, Alert, CircularProgress,
-  FormLabel, FormGroup
+  Container, Box, Typography, Grid, FormControl, InputLabel,
+  Select, MenuItem, TextField, Button, Paper, Pagination,
+  CircularProgress, Alert, Chip
 } from '@mui/material';
+import { Search as SearchIcon } from '@mui/icons-material';
+import MovieList from '../components/MovieList';
 import { movieApi } from '../services/movieApi';
-import './SearchResults.css';
 
 const SearchResults = () => {
   const location = useLocation();
@@ -29,61 +28,37 @@ const SearchResults = () => {
 
   // Simulated search function
   const handleSearch = async (e) => {
-    if (e) e.preventDefault();
+    if (e) {
+      e.preventDefault();
+    }
     
-    if (!searchQuery.trim()) return;
+    if (!searchQuery.trim()) {
+      return;
+    }
     
     setLoading(true);
     setError(null);
     
     try {
-      // In a real app, this would call the actual API
-      setTimeout(() => {
-        const mockResults = [
-          {
-            id: 278,
-            title: "The Shawshank Redemption",
-            poster_path: "/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg",
-            vote_average: 8.7,
-            overview: "Framed in the 1940s for the double murder of his wife and her lover, upstanding banker Andy Dufresne begins a new life at the Shawshank prison.",
-            genre_ids: [18, 80],
-            release_date: "1994-09-23"
-          },
-          {
-            id: 238,
-            title: "The Godfather",
-            poster_path: "/3bhkrj58Vtu7enYsRolD1fZdja1.jpg",
-            vote_average: 8.7,
-            overview: "Spanning the years 1945 to 1955, a chronicle of the fictional Italian-American Corleone crime family.",
-            genre_ids: [18, 80],
-            release_date: "1972-03-14"
-          },
-          {
-            id: 240,
-            title: "The Godfather Part II",
-            poster_path: "/hek3koDUyRQk7FIhPXsa6mT2Zc3.jpg",
-            vote_average: 8.5,
-            overview: "In the continuing saga of the Corleone crime family, a young Vito Corleone grows up in Sicily and in 1910s New York.",
-            genre_ids: [18, 80],
-            release_date: "1974-12-20"
-          },
-          {
-            id: 424,
-            title: "Schindler's List",
-            poster_path: "/sF1U4EUQS8YHUYjNl3pMGNIQyr0.jpg",
-            vote_average: 8.6,
-            overview: "The true story of how businessman Oskar Schindler saved over a thousand Jewish lives from the Nazis.",
-            genre_ids: [18, 36],
-            release_date: "1993-12-15"
-          }
-        ];
-        
-        setSearchResults(mockResults);
-        setTotalPages(5); // Mock total pages
-        setLoading(false);
-      }, 1000);
+      // Update URL with search query without page reload
+      const url = new URL(window.location);
+      url.searchParams.set('query', searchQuery);
+      window.history.pushState({}, '', url);
+      
+      // In a real app, we would include filters in the API call
+      const response = await movieApi.searchMovies(searchQuery, page);
+      
+      setSearchResults(response.results || []);
+      setTotalPages(Math.min(response.total_pages || 1, 500)); // TMDB API limits to 500 pages
+      
+      if (response.results?.length === 0) {
+        setError('No movies found matching your search criteria.');
+      }
     } catch (err) {
-      setError("Failed to perform search. Please try again.");
+      console.error('Error searching movies:', err);
+      setError(err.message || 'Failed to search movies. Please try again later.');
+      setSearchResults([]);
+    } finally {
       setLoading(false);
     }
   };
@@ -93,19 +68,25 @@ const SearchResults = () => {
     if (initialQuery) {
       handleSearch();
     }
-  }, [initialQuery]);
+  }, [initialQuery, page]);
 
   const handleFilterChange = (event) => {
+    const { name, value } = event.target;
     setFilters({
       ...filters,
-      [event.target.name]: event.target.value
+      [name]: value
     });
-    setPage(1); // Reset to first page when changing filters
+    
+    // Reset to page 1 when filters change
+    setPage(1);
+    
+    // In a real app, we would re-fetch results with new filters
   };
 
   const handlePageChange = (event, value) => {
     setPage(value);
-    window.scrollTo(0, 0);
+    // Scroll to top when changing page
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Genre mapping for display
@@ -122,200 +103,212 @@ const SearchResults = () => {
     10749: 'Romance',
     878: 'Sci-Fi'
   };
+  
+  // Function to enhance movie objects with genre names
+  const enhanceMoviesWithGenreNames = (movies) => {
+    return movies.map(movie => ({
+      ...movie,
+      genreNames: movie.genre_ids?.map(id => genreMap[id] || 'Unknown') || []
+    }));
+  };
+  
+  // Enhanced movies with genre names
+  const enhancedMovies = enhanceMoviesWithGenreNames(searchResults);
 
   return (
-    <Container maxWidth="lg" className="search-results-container" sx={{ py: 4 }}>
-      <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
-        Search Movies
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Typography variant="h4" component="h1" gutterBottom>
+        Search Results
       </Typography>
-
-      {/* Search Form */}
-      <Card sx={{ p: 3, mb: 4 }}>
-        <form onSubmit={handleSearch}>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Search for movies..."
-                variant="outlined"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton type="submit" edge="end">
-                        <span className="material-icons">search</span>
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-                autoFocus
-              />
-            </Grid>
-
-            <Grid item xs={12} sm={6} md={2}>
-              <FormControl fullWidth>
-                <FormLabel component="legend" sx={{ mb: 1, fontSize: '0.75rem' }}>
-                  Genre
-                </FormLabel>
-                <Select
-                  value={filters.genre}
-                  name="genre"
-                  onChange={handleFilterChange}
-                  size="small"
-                >
-                  <MenuItem value="all">All Genres</MenuItem>
-                  <MenuItem value="28">Action</MenuItem>
-                  <MenuItem value="18">Drama</MenuItem>
-                  <MenuItem value="35">Comedy</MenuItem>
-                  <MenuItem value="878">Sci-Fi</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid item xs={12} sm={6} md={2}>
-              <FormControl fullWidth>
-                <FormLabel component="legend" sx={{ mb: 1, fontSize: '0.75rem' }}>
-                  Year
-                </FormLabel>
-                <Select
-                  value={filters.year}
-                  name="year"
-                  onChange={handleFilterChange}
-                  size="small"
-                >
-                  <MenuItem value="all">All Years</MenuItem>
-                  <MenuItem value="2023">2023</MenuItem>
-                  <MenuItem value="2022">2022</MenuItem>
-                  <MenuItem value="2021">2021</MenuItem>
-                  <MenuItem value="2020">2020</MenuItem>
-                  <MenuItem value="older">Before 2020</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            <Grid item xs={12} sm={6} md={2}>
-              <FormControl fullWidth>
-                <FormLabel component="legend" sx={{ mb: 1, fontSize: '0.75rem' }}>
-                  Sort By
-                </FormLabel>
-                <Select
-                  value={filters.sort}
-                  name="sort"
-                  onChange={handleFilterChange}
-                  size="small"
-                >
-                  <MenuItem value="popularity.desc">Popularity</MenuItem>
-                  <MenuItem value="vote_average.desc">Rating</MenuItem>
-                  <MenuItem value="release_date.desc">Newest</MenuItem>
-                  <MenuItem value="release_date.asc">Oldest</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-          </Grid>
-        </form>
-      </Card>
-
-      {/* Results */}
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}>
-          <CircularProgress />
+      
+      <Paper sx={{ p: 3, mb: 4 }}>
+        <Box component="form" onSubmit={handleSearch} sx={{ display: 'flex', gap: 2 }}>
+          <TextField
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search for movies..."
+            fullWidth
+            variant="outlined"
+            size="medium"
+          />
+          <Button 
+            type="submit"
+            variant="contained" 
+            startIcon={<SearchIcon />}
+            disabled={!searchQuery.trim() || loading}
+            sx={{ whitespace: 'nowrap', px: 3 }}
+          >
+            Search
+          </Button>
         </Box>
-      ) : error ? (
-        <Alert severity="error" sx={{ my: 3 }}>{error}</Alert>
-      ) : searchResults.length === 0 ? (
-        <Box sx={{ textAlign: 'center', my: 5 }}>
-          {initialQuery ? (
-            <Alert severity="info">
-              No movies found matching "{initialQuery}". Try a different search term.
-            </Alert>
-          ) : (
-            <Typography color="text.secondary">
-              Enter a search term to find movies.
+      </Paper>
+      
+      <Grid container spacing={3}>
+        {/* Filters sidebar */}
+        <Grid item xs={12} md={3}>
+          <Paper sx={{ p: 3, mb: { xs: 3, md: 0 } }}>
+            <Typography variant="h6" gutterBottom>
+              Filter Results
             </Typography>
-          )}
-        </Box>
-      ) : (
-        <>
-          <Typography variant="h5" gutterBottom sx={{ mt: 4 }}>
-            Search Results {initialQuery ? `for "${initialQuery}"` : ''}
-          </Typography>
-          
-          <Grid container spacing={3}>
-            {searchResults.map((movie) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={movie.id}>
-                <Card className="search-result-card" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                  <CardMedia
-                    component="img"
-                    height="300"
-                    image={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                    alt={movie.title}
-                    sx={{ objectFit: 'cover' }}
-                  />
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Typography variant="h6" component="div" className="movie-title" noWrap>
-                      {movie.title}
-                    </Typography>
+            
+            <FormControl fullWidth sx={{ mb: 3 }}>
+              <InputLabel id="genre-select-label">Genre</InputLabel>
+              <Select
+                labelId="genre-select-label"
+                id="genre-select"
+                value={filters.genre}
+                name="genre"
+                label="Genre"
+                onChange={handleFilterChange}
+              >
+                <MenuItem value="all">All Genres</MenuItem>
+                {Object.entries(genreMap).map(([id, name]) => (
+                  <MenuItem key={id} value={id}>{name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            
+            <FormControl fullWidth sx={{ mb: 3 }}>
+              <InputLabel id="year-select-label">Release Year</InputLabel>
+              <Select
+                labelId="year-select-label"
+                id="year-select"
+                value={filters.year}
+                name="year"
+                label="Release Year"
+                onChange={handleFilterChange}
+              >
+                <MenuItem value="all">All Years</MenuItem>
+                {[...Array(30)].map((_, i) => {
+                  const year = new Date().getFullYear() - i;
+                  return <MenuItem key={year} value={year}>{year}</MenuItem>;
+                })}
+              </Select>
+            </FormControl>
+            
+            <FormControl fullWidth>
+              <InputLabel id="sort-select-label">Sort By</InputLabel>
+              <Select
+                labelId="sort-select-label"
+                id="sort-select"
+                value={filters.sort}
+                name="sort"
+                label="Sort By"
+                onChange={handleFilterChange}
+              >
+                <MenuItem value="popularity.desc">Popularity (Desc)</MenuItem>
+                <MenuItem value="popularity.asc">Popularity (Asc)</MenuItem>
+                <MenuItem value="vote_average.desc">Rating (Desc)</MenuItem>
+                <MenuItem value="vote_average.asc">Rating (Asc)</MenuItem>
+                <MenuItem value="release_date.desc">Release Date (Desc)</MenuItem>
+                <MenuItem value="release_date.asc">Release Date (Asc)</MenuItem>
+                <MenuItem value="title.asc">Title (A-Z)</MenuItem>
+                <MenuItem value="title.desc">Title (Z-A)</MenuItem>
+              </Select>
+            </FormControl>
+            
+            <Button 
+              variant="outlined" 
+              fullWidth 
+              sx={{ mt: 3 }}
+              onClick={() => {
+                setFilters({
+                  genre: 'all',
+                  year: 'all',
+                  sort: 'popularity.desc'
+                });
+                setPage(1);
+              }}
+            >
+              Reset Filters
+            </Button>
+          </Paper>
+        </Grid>
+        
+        {/* Search results */}
+        <Grid item xs={12} md={9}>
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+              <CircularProgress size={60} />
+            </Box>
+          ) : error ? (
+            <Alert severity="info" sx={{ mb: 3 }}>
+              {error}
+            </Alert>
+          ) : searchResults.length > 0 ? (
+            <>
+              <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="h6">
+                  Found {searchResults.length} results for "{initialQuery}"
+                </Typography>
+                
+                {Object.entries(filters).map(([key, value]) => {
+                  if (value !== 'all') {
+                    let label = '';
+                    if (key === 'genre') {
+                      label = `Genre: ${genreMap[value] || value}`;
+                    } else if (key === 'year') {
+                      label = `Year: ${value}`;
+                    } else if (key === 'sort') {
+                      const sortMap = {
+                        'popularity.desc': 'Most Popular',
+                        'popularity.asc': 'Least Popular',
+                        'vote_average.desc': 'Highest Rated',
+                        'vote_average.asc': 'Lowest Rated',
+                        'release_date.desc': 'Newest',
+                        'release_date.asc': 'Oldest',
+                        'title.asc': 'A-Z',
+                        'title.desc': 'Z-A',
+                      };
+                      label = `Sorted by: ${sortMap[value]}`;
+                    }
                     
-                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, mb: 1 }}>
-                      <Rating value={movie.vote_average / 2} precision={0.5} readOnly size="small" />
-                      <Typography variant="body2" sx={{ ml: 1 }}>
-                        {movie.vote_average.toFixed(1)}/10
-                      </Typography>
-                    </Box>
-                    
-                    <Box sx={{ mb: 1 }}>
-                      {movie.genre_ids.slice(0, 2).map((genreId) => (
+                    if (label) {
+                      return (
                         <Chip 
-                          key={genreId}
-                          label={genreMap[genreId] || 'Unknown'} 
+                          key={key} 
+                          label={label} 
                           size="small" 
-                          sx={{ mr: 0.5, mb: 0.5 }}
+                          variant="outlined"
+                          sx={{ mr: 1 }}
                         />
-                      ))}
-                      <Chip 
-                        label={movie.release_date.substring(0, 4)} 
-                        size="small" 
-                        variant="outlined"
-                        sx={{ mb: 0.5 }}
-                      />
-                    </Box>
-                    
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      {movie.overview.length > 100 
-                        ? `${movie.overview.substring(0, 100)}...` 
-                        : movie.overview}
-                    </Typography>
-                  </CardContent>
-                  <CardActions sx={{ padding: 2, pt: 0 }}>
-                    <Button 
-                      variant="contained" 
-                      fullWidth 
-                      component={Link} 
-                      to={`/movie/${movie.id}`}
-                    >
-                      View Details
-                    </Button>
-                  </CardActions>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-          
-          {/* Pagination */}
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-            <Pagination 
-              count={totalPages} 
-              page={page} 
-              onChange={handlePageChange} 
-              color="primary" 
-              size="large" 
-              showFirstButton 
-              showLastButton
-            />
-          </Box>
-        </>
-      )}
+                      );
+                    }
+                  }
+                  return null;
+                })}
+              </Box>
+              
+              <MovieList 
+                movies={enhancedMovies} 
+                loading={loading}
+                error={error}
+                totalPages={totalPages}
+                currentPage={page}
+                onPageChange={handlePageChange}
+              />
+              
+              {totalPages > 1 && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                  <Pagination 
+                    count={totalPages} 
+                    page={page} 
+                    onChange={handlePageChange}
+                    color="primary"
+                    size="large"
+                  />
+                </Box>
+              )}
+            </>
+          ) : (
+            <Box sx={{ textAlign: 'center', py: 5 }}>
+              <Typography variant="body1" color="text.secondary">
+                Enter a search term to find movies.
+              </Typography>
+            </Box>
+          )}
+        </Grid>
+      </Grid>
     </Container>
   );
 };
